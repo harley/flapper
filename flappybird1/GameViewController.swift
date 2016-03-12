@@ -28,6 +28,13 @@ class GameViewController: UIViewController {
         }
         
     }
+    @IBAction func onScreenTapped(sender: UITapGestureRecognizer) {
+        // whenever tapped, push bird up
+        let push = UIPushBehavior(items: [birdView], mode: UIPushBehaviorMode.Instantaneous)
+        push.pushDirection = CGVectorMake(0, -1.1)
+        push.active = true
+        animator.addBehavior(push)
+    }
     
     func setupGame() {
         gravity.addItem(birdView)
