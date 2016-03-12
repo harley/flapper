@@ -15,6 +15,7 @@ class GameViewController: UIViewController {
     var collision = UICollisionBehavior()
     var birdPush: UIPushBehavior!
     var pipePush: UIPushBehavior!
+    var noRotates: UIDynamicItemBehavior!
     
     var isPlaying = false
     var timer: NSTimer?
@@ -27,17 +28,21 @@ class GameViewController: UIViewController {
     
     @IBOutlet weak var velocityLabel: UILabel!
     @IBOutlet weak var birdView: UIImageView!
+    
     @IBAction func onPlayTouched(sender: UIButton) {
         if isPlaying {
             isPlaying = false
             sender.setTitle("Play", forState: .Normal)
             
+            // reset bird's position
             birdView.frame.origin = originalOrigin
+            
             animator.removeAllBehaviors()
             timer!.invalidate()
         } else {
             isPlaying = true
             sender.setTitle("Stop", forState: .Normal)
+            // add all behaviors
             setupGame()
         }
     }
@@ -52,8 +57,7 @@ class GameViewController: UIViewController {
         animator.addBehavior(gravity)
         animator.addBehavior(birdPush)
         animator.addBehavior(pipePush)
-        
-        pipePush.active = true
+        animator.addBehavior(noRotates)
         
         timer = NSTimer.scheduledTimerWithTimeInterval(1, target: self, selector: "onTimer", userInfo: nil, repeats: true)
     }
@@ -85,12 +89,16 @@ class GameViewController: UIViewController {
         dynamicProperties.resistance = 0
         animator.addBehavior(dynamicProperties)
         
-        pipePush.addItem(bottomPipe)
-        pipePush.addItem(topPipe)
-        
-        collision.addItem(topPipe)
-        collision.addItem(bottomPipe)
+        addPipeBehaviors(topPipe)
+        addPipeBehaviors(bottomPipe)
     }
+    
+    func addPipeBehaviors(pipe: UIView) {
+        pipePush.addItem(pipe)
+        collision.addItem(pipe)
+        noRotates.addItem(pipe)
+    }
+    
     
     func randomPipeHeight() -> CGFloat {
         return CGFloat(arc4random_uniform(160) + 160);
@@ -112,7 +120,9 @@ class GameViewController: UIViewController {
         
         pipePush = UIPushBehavior(items: [], mode: .Continuous)
         pipePush.pushDirection = CGVectorMake(-0.8, 0)
-        pipePush.active = false
+        
+        noRotates = UIDynamicItemBehavior(items: [birdView])
+        noRotates.allowsRotation = false
         
         drawPipes()
     }
