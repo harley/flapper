@@ -9,48 +9,53 @@
 import UIKit
 
 class GameViewController: UIViewController {
+    var animator: UIDynamicAnimator!
+    
+    var gravity = UIGravityBehavior()
+    var collision = UICollisionBehavior()
+    var birdPush: UIPushBehavior!
+    var pipePush: UIPushBehavior!
+    
+    var isPlaying = false
+    var timer: NSTimer?
+    
+    var originalOrigin: CGPoint!
+    
+    // PIPE
     let PIPE_WIDTH      = CGFloat(40)
     let PIPE_MAX_HEIGHT = CGFloat(320)
     
-    var animator: UIDynamicAnimator!
-    var gravity = UIGravityBehavior()
-    var pipeBehavior: UIDynamicItemBehavior!
-    
-    var isPlaying = false
-    var originalPositionY: CGFloat!
-    var birdPush: UIPushBehavior!
-    var pipePush: UIPushBehavior!
-    var timer: NSTimer?
-    
     @IBOutlet weak var velocityLabel: UILabel!
-    
     @IBOutlet weak var birdView: UIImageView!
     @IBAction func onPlayTouched(sender: UIButton) {
         if isPlaying {
             isPlaying = false
             sender.setTitle("Play", forState: .Normal)
+            
+            birdView.frame.origin = originalOrigin
             animator.removeAllBehaviors()
-            birdView.frame.origin.y = originalPositionY
+            timer!.invalidate()
         } else {
             isPlaying = true
             sender.setTitle("Stop", forState: .Normal)
             setupGame()
         }
-        
     }
+    
     @IBAction func onScreenTapped(sender: UITapGestureRecognizer) {
         // whenever tapped, push bird up
         birdPush.active = true
-        animator.addBehavior(birdPush)
     }
     
     func setupGame() {
-        gravity.addItem(birdView)
+        animator.addBehavior(collision)
         animator.addBehavior(gravity)
-        pipePush.active = true
+        animator.addBehavior(birdPush)
         animator.addBehavior(pipePush)
         
-        timer = NSTimer.scheduledTimerWithTimeInterval(2, target: self, selector: "onTimer", userInfo: nil, repeats: true)
+        pipePush.active = true
+        
+        timer = NSTimer.scheduledTimerWithTimeInterval(1, target: self, selector: "onTimer", userInfo: nil, repeats: true)
     }
     
     func onTimer() {
@@ -78,15 +83,17 @@ class GameViewController: UIViewController {
         let dynamicProperties = UIDynamicItemBehavior(items: [bottomPipe, topPipe])
         dynamicProperties.allowsRotation = false
         dynamicProperties.resistance = 0
-        dynamicProperties.density = 0
         animator.addBehavior(dynamicProperties)
         
         pipePush.addItem(bottomPipe)
         pipePush.addItem(topPipe)
+        
+        collision.addItem(topPipe)
+        collision.addItem(bottomPipe)
     }
     
     func randomPipeHeight() -> CGFloat {
-        return CGFloat(arc4random_uniform(220) + 100);
+        return CGFloat(arc4random_uniform(160) + 160);
     }
     
     override func viewDidLoad() {
@@ -94,14 +101,17 @@ class GameViewController: UIViewController {
         // Do any additional setup after loading the view, typically from a nib.
         
         animator = UIDynamicAnimator(referenceView: view)
-        originalPositionY = birdView.frame.origin.y
+        collision.addItem(birdView)
+        gravity.addItem(birdView)
+        
+        originalOrigin = birdView.frame.origin
         
         birdPush = UIPushBehavior(items: [birdView], mode: UIPushBehaviorMode.Instantaneous)
         birdPush.pushDirection = CGVectorMake(0, -1.1)
         birdPush.active = false
         
         pipePush = UIPushBehavior(items: [], mode: .Continuous)
-        pipePush.pushDirection = CGVectorMake(-1, 0)
+        pipePush.pushDirection = CGVectorMake(-0.8, 0)
         pipePush.active = false
         
         drawPipes()
@@ -112,4 +122,3 @@ class GameViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 }
-
